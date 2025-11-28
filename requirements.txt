@@ -1,4 +1,4 @@
-fastapi
-uvicorn
+fastapi==0.103.2
+uvicorn[standard]==0.24.0
 pyodbc
-pydantic==1.10.13
+pydantic==1.10.15
