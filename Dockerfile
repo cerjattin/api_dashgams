@@ -1,23 +1,22 @@
-# Imagen base Debian 12 + Python 3.11 (compatibles con Microsoft)
+# Imagen base compatible con Microsoft ODBC (Debian 12)
 FROM python:3.11-slim-bookworm
 
-# Evitar prompts interactivos
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar utilidades y dependencias
+# Dependencias del sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg \
     apt-transport-https \
     ca-certificates \
-    unixodbc-dev && \
-    rm -rf /var/lib/apt/lists/*
+    unixodbc-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Agregar repositorio Microsoft (Bookworm)
+# Repositorio Microsoft para Debian 12
 RUN curl -sSL https://packages.microsoft.com/config/debian/12/prod.list \
     -o /etc/apt/sources.list.d/mssql-release.list
 
-# Agregar keyring oficial
+# Keyring Microsoft
 RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
     | gpg --dearmor \
     | tee /usr/share/keyrings/microsoft-prod.gpg > /dev/null
@@ -25,3 +24,20 @@ RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
 # Instalar msodbcsql18
 RUN apt-get update && \
     ACCEPT_EULA=Y apt-get install -y msodbcsql18 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Crear carpeta app
+WORKDIR /app
+
+# Copiar dependencias
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar código
+COPY . .
+
+# Exponer API
+EXPOSE 8000
+
+# Iniciar servidor
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
